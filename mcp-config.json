@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "custom-mcp-server": {
+      "command": "node",
+      "args": ["c:\\Users\\larse\\Desktop\\MCP\\index.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

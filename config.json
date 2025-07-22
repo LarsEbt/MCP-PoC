@@ -1,0 +1,93 @@
+{
+  "apis": {
+    "intershop_icm": {
+      "base_url": "https://develop.icm.intershop.de/INTERSHOP/rest/WFS/inSPIRED-inTRONICS_Business-Site/-;loc=en_US;cur=USD",
+      "description": "Intershop Commerce Management - Vollständige E-Commerce Demo API",
+      "endpoints": {
+        "get_product": {
+          "path": "/products/{sku}",
+          "method": "GET",
+          "description": "Einzelnes Produkt mit allen Details, Bildern und Attributen",
+          "params": {
+            "allImages": true,
+            "extended": true
+          }
+        },
+        "search_products": {
+          "path": "/products",
+          "method": "GET",
+          "description": "Produktsuche mit Filtern",
+          "params": {
+            "searchTerm": "{query}",
+            "limit": 24,
+            "offset": 0,
+            "allImages": true
+          }
+        },
+        "get_categories": {
+          "path": "/categories",
+          "method": "GET",
+          "description": "Alle Produktkategorien"
+        },
+        "get_category": {
+          "path": "/categories/{categoryId}",
+          "method": "GET",
+          "description": "Einzelne Kategorie mit Produkten"
+        },
+        "get_category_products": {
+          "path": "/categories/{categoryId}/products",
+          "method": "GET",
+          "description": "Produkte einer Kategorie",
+          "params": {
+            "limit": 24,
+            "offset": 0,
+            "allImages": true
+          }
+        },
+        "create_basket": {
+          "path": "/baskets",
+          "method": "POST",
+          "description": "Neuen Warenkorb erstellen"
+        },
+        "add_to_basket": {
+          "path": "/baskets/{basketId}/items",
+          "method": "POST",
+          "description": "Produkt zum Warenkorb hinzufügen",
+          "body": {
+            "sku": "{productSku}",
+            "quantity": 1
+          }
+        },
+        "get_basket": {
+          "path": "/baskets/{basketId}",
+          "method": "GET",
+          "description": "Warenkorb Details anzeigen"
+        }
+      }
+    },
+    "example_api": {
+      "base_url": "https://jsonplaceholder.typicode.com",
+      "description": "Test API - braucht KEINEN API Key",
+      "endpoints": {
+        "get_posts": {
+          "path": "/posts",
+          "method": "GET",
+          "description": "Alle Posts abrufen"
+        }
+      }
+    }
+  },
+  "database": {
+    "type": "sqlite",
+    "connection": {
+      "filename": "data.db"
+    }
+  },
+  "settings": {
+    "timeout": 30000,
+    "max_retries": 3,
+    "rate_limit": {
+      "requests_per_minute": 60
+    }
+  }
+}
