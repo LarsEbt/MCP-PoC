@@ -1,18 +1,19 @@
-# Custom MCP Server mit Intershop E-Commerce Integration
+# Intershop MCP Server
 
-Ein eigener Model Context Protocol (MCP) Server in JavaScript mit vollständiger Intershop Commerce Management (ICM) Integration für E-Commerce-Funktionalität.
+Ein spezialisierter Model Context Protocol (MCP) Server für vollständige Intershop Commerce Management (ICM) Integration.
 
 ## 🚀 Features
 
 - **🛒 Intershop E-Commerce Integration**: Vollständiger Zugriff auf Produkte, Kategorien, Warenkorb
-- **📱 Produktmanagement**: Detaillierte Produktsuche, Bilder, Attribute, Preise
-- **🗂️ Kategorien-Navigation**: Hierarchische Produktkategorien
-- **�️ Warenkorb-Funktionen**: Erstellen, Verwalten, Checkout-Prozess
-- **Custom API Integration**: Einfache Integration eigener REST APIs
-- **Database Support**: Datenbankabfragen und -operationen
-- **Data Processing**: Datenverarbeitung und -transformation
-- **Rate Limiting**: Automatische Anfragenbegrenzung
-- **Error Handling**: Robuste Fehlerbehandlung mit Retry-Logik
+- **🔍 Produktsuche**: Einfache und erweiterte Suche mit Filtern
+- **📱 Produktmanagement**: Detaillierte Produktinformationen, Bilder, Attribute, Preise
+- **⭐ Produktbewertungen**: Abrufen von Kundenbewertungen und Reviews
+- **🔗 Produktempfehlungen**: Ähnliche Produkte finden
+- **📦 Verfügbarkeit**: Lagerbestand und Lieferzeiten prüfen
+- **🗂️ Kategorien-Navigation**: Hierarchische Produktkategorien durchsuchen
+- **🛍️ Warenkorb-Funktionen**: Erstellen, Verwalten, Items hinzufügen/entfernen/aktualisieren
+- **💳 Checkout-Prozess**: Checkout-Funktionalität starten
+- **🔄 Fehlerbehandlung**: Robuste Fehlerbehandlung mit informativen Meldungen
 
 ## 📦 Installation
 
@@ -30,238 +31,177 @@ npm run dev
 npm run test:intershop
 ```
 
-## 🛠️ Verfügbare MCP Tools
+## ⚙️ Konfiguration
 
-### 🛒 E-Commerce Tools (Intershop ICM)
-
-#### 1. `search_products`
-Sucht nach Produkten im E-Commerce System.
-
-**Parameter:**
-- `query` (string, optional): Suchbegriff
-- `category` (string, optional): Kategorie ID
-- `limit` (number, optional): Anzahl Ergebnisse (Standard: 24)
-- `offset` (number, optional): Offset für Paginierung
-
-**Beispiel:**
-```json
-{
-  "query": "Surface",
-  "limit": 10
-}
-```
-
-#### 2. `get_product_details`
-Detaillierte Produktinformationen mit Bildern, Attributen und Preisen.
-
-**Parameter:**
-- `sku` (string): Produkt SKU/Artikelnummer
-
-**Beispiel:**
-```json
-{
-  "sku": "201807231-01"
-}
-```
-
-#### 3. `manage_basket`
-Warenkorb-Management (erstellen, Produkte hinzufügen, anzeigen).
-
-**Parameter:**
-- `action` (string): "create", "add_product", "view"
-- `basketId` (string, optional): Warenkorb ID
-- `sku` (string, optional): Produkt SKU
-- `quantity` (number, optional): Anzahl (Standard: 1)
-
-**Beispiele:**
-```json
-// Warenkorb erstellen
-{"action": "create"}
-
-// Produkt hinzufügen
-{"action": "add_product", "basketId": "xyz", "sku": "201807231-01", "quantity": 2}
-
-// Warenkorb anzeigen
-{"action": "view", "basketId": "xyz"}
-```
-
-#### 4. `get_categories`
-Produktkategorien und Kategorie-Navigation.
-
-**Parameter:**
-- `categoryId` (string, optional): Spezifische Kategorie ID
-
-**Beispiel:**
-```json
-{
-  "categoryId": "Computers"
-}
-```
-
-### 🔧 Allgemeine Tools
-
-#### 5. `call_custom_api`
-Direkter Aufruf eigener APIs mit automatischer API-Key-Behandlung.
-
-#### 6. `query_database`
-Datenbankabfragen für weitere Datenquellen.
-
-#### 7. `process_data`
-Datenverarbeitung und -transformation.
-
-## 🌐 Intershop E-Commerce Demo
-
-Die Integration nutzt die **Intershop inSPIRED Demo-Umgebung**:
-
-- **Base URL:** `https://develop.icm.intershop.de/INTERSHOP/rest/WFS/inSPIRED-inTRONICS_Business-Site/`
-- **Vollständiger Produktkatalog** mit Elektronik, Computern, Tablets
-- **Echte Produktdaten:** Microsoft Surface, Dell, HP, etc.
-- **Produktbilder** in verschiedenen Größen (S, M, L, ZOOM)
-- **Detaillierte Attribute:** Speicher, Prozessor, Bildschirmgröße
-- **Preise und Verfügbarkeit** in USD
-- **Kategoriestruktur:** Computers → Tablets → Microsoft
-
-### Beispiel-Produkte
-- **Microsoft Surface Book 2** (SKU: 201807231-01)
-- **Dell Laptops** verschiedene Modelle
-- **HP Desktop Computer**
-- **Tablets und Zubehör**
-
-## 🧪 Testen der Integration
+Erstellen Sie eine `.env` Datei im Projektverzeichnis:
 
 ```bash
-# Grundlegende Tests
-npm test
+# Intershop API Konfiguration (optional - Standard-Demo verwendet)
+INTERSHOP_API_URL=https://your-intershop-instance.com/api
+INTERSHOP_API_KEY=your-api-key-here
 
-# Intershop E-Commerce spezifische Tests
-npm run test:intershop
+# Logging
+LOG_LEVEL=info
 ```
 
-Die Tests prüfen:
-- ✅ Produktsuche und -details
-- ✅ Kategorien-Navigation
-- ✅ Bildextraktion
-- ✅ Preisformatierung
-- ✅ Warenkorb-Funktionen
-- ✅ Attribut-Verarbeitung
+## 🛠️ Verfügbare Tools
 
-## 💻 Code-Beispiele
+### Produktsuche
+- **`search_products`**: Grundlegende Produktsuche
+- **`advanced_product_search`**: Erweiterte Suche mit Preis-, Marken- und Sortierungsfiltern
 
-### JavaScript Integration
+### Produktinformationen
+- **`get_product_details`**: Detaillierte Produktinformationen abrufen
+- **`get_product_reviews`**: Kundenbewertungen und Reviews
+- **`get_similar_products`**: Ähnliche/empfohlene Produkte
+- **`check_product_availability`**: Verfügbarkeit und Lagerbestand
+
+### Kategorien
+- **`get_categories`**: Alle oder spezifische Kategorien abrufen
+- **`get_category_products`**: Produkte einer bestimmten Kategorie
+
+### Warenkorb
+- **`manage_basket`**: Komplette Warenkorbverwaltung
+  - `create`: Neuen Warenkorb erstellen
+  - `add_product`: Produkt hinzufügen
+  - `view`: Warenkorbinhalt anzeigen
+  - `update_item`: Item-Menge aktualisieren
+  - `remove_item`: Item entfernen
+
+### Checkout
+- **`start_checkout`**: Checkout-Prozess für Warenkorb starten
+
+## 📋 Beispiele
+
+### Produktsuche
 ```javascript
-import IntershopIcmClient from './intershop-client.js';
-
-const client = new IntershopIcmClient();
-
-// Produkt suchen
-const results = await client.searchProducts('Surface');
-
-// Produktdetails
-const product = await client.getProduct('201807231-01');
-
-// Bilder extrahieren
-const images = client.extractProductImages(product);
-
-// Preise formatieren
-const price = client.formatPrice(product.listPrice);
-```
-
-### MCP Tool Aufrufe
-```json
-// Produktsuche
+// Grundlegende Suche
 {
-  "tool": "search_products",
-  "args": {"query": "Microsoft Surface", "limit": 5}
+  "name": "search_products",
+  "arguments": {
+    "query": "laptop",
+    "limit": 10
+  }
 }
 
-// Produktdetails
+// Erweiterte Suche
 {
-  "tool": "get_product_details", 
-  "args": {"sku": "201807231-01"}
-}
-
-// Kategorien anzeigen
-{
-  "tool": "get_categories",
-  "args": {}
+  "name": "advanced_product_search", 
+  "arguments": {
+    "query": "smartphone",
+    "minPrice": 200,
+    "maxPrice": 800,
+    "brand": "Samsung",
+    "sortBy": "price-asc"
+  }
 }
 ```
 
-## ⚙️ Konfiguration erweitern
+### Warenkorbverwaltung
+```javascript
+// Warenkorb erstellen
+{
+  "name": "manage_basket",
+  "arguments": {
+    "action": "create"
+  }
+}
 
-### Eigene E-Commerce APIs hinzufügen
+// Produkt hinzufügen
+{
+  "name": "manage_basket",
+  "arguments": {
+    "action": "add_product",
+    "basketId": "basket-123",
+    "sku": "201807231-01", 
+    "quantity": 2
+  }
+}
+```
+
+## 🔧 Integration
+
+### Claude Desktop
+Erstellen Sie eine `claude_desktop_config.json`:
+
 ```json
 {
-  "apis": {
-    "mein_shop": {
-      "base_url": "https://api.mein-shop.de",
-      "endpoints": {
-        "produkte": {
-          "path": "/products",
-          "method": "GET"
-        }
+  "mcpServers": {
+    "intershop-mcp-server": {
+      "command": "node",
+      "args": ["path/to/your/project/index.js"],
+      "env": {
+        "INTERSHOP_API_URL": "https://your-instance.com/api"
       }
     }
   }
 }
 ```
 
-### Weitere Intershop Instanzen
-```json
-{
-  "base_url": "https://ihr-intershop-server.de/INTERSHOP/rest/WFS/ihr-site/-;loc=de_DE;cur=EUR"
-}
+### VS Code
+Nutzen Sie die MCP Extension oder konfigurieren Sie einen Task in VS Code.
+
+## 🏗️ Architektur
+
+```
+📁 Intershop MCP Server
+├── 📄 index.js              # Haupt-MCP-Server
+├── 📄 intershop-client.js    # Intershop API Client
+├── 📄 utils.js               # Hilfsfunktionen
+├── 📄 test-intershop.js      # Intershop-Tests
+└── 📄 config.json            # Konfiguration
 ```
 
-## 📊 Verfügbare Daten
+## 🧪 Tests
 
-### Produktinformationen
-- Name, Beschreibung, SKU
-- Preise (Liste, Angebot)
-- Verfügbarkeit und Lieferzeit
-- Technische Attribute
-- Produktbilder (verschiedene Größen)
-- Hersteller und Kategorien
-
-### E-Commerce-Funktionen
-- Produktsuche mit Filtern
-- Kategorien-Navigation
-- Warenkorb-Management
-- Checkout-Vorbereitung
-- Produktempfehlungen
-- Bewertungen und Reviews
-
-## � Produktive Nutzung
-
-### Eigene Intershop-Instanz
-1. Base URL in `config.json` ändern
-2. Authentifizierung konfigurieren
-3. Site- und Lokalisierungsparameter anpassen
-
-### API-Keys und Sicherheit
 ```bash
-# .env Datei erstellen
-cp .env.example .env
-
-# Eigene Keys eintragen
-INTERSHOP_API_KEY=ihr_api_key
-INTERSHOP_BASE_URL=https://ihr-server.de
+# Intershop API Tests ausführen
+npm run test:intershop
 ```
 
-## 📚 Weitere Ressourcen
+Die Tests prüfen:
+- Produktsuche Funktionalität
+- Produktdetails Abruf
+- Kategorien Navigation
+- Warenkorboperationen
+- API-Verbindung und Antwortzeiten
 
-- [Intershop ICM REST API Dokumentation](https://knowledge.intershop.com/kb/index.php/Display/314H02)
-- [MCP Documentation](https://modelcontextprotocol.io/llms-full.txt)
-- [Intershop Commerce Management](https://www.intershop.com/)
+## 🌐 Intershop API
 
-## 🤝 Contributing
+Dieses Projekt nutzt standardmäßig die Intershop Demo-API:
+- **Base URL**: `https://develop.icm.intershop.de/INTERSHOP/rest/WFS/inSPIRED-inTRONICS_Business-Site/-;loc=en_US;cur=USD`
+- **Shop**: inSPIRED - inTRONICS Business
+- **Locale**: en_US
+- **Currency**: USD
+
+Für Ihre eigene Intershop-Instanz passen Sie die Konfiguration in der `.env` Datei an.
+
+## 🛡️ Fehlerbehandlung
+
+Der Server implementiert umfassende Fehlerbehandlung:
+- Netzwerk-Timeouts und Retry-Mechanismen
+- Validierung aller Eingabeparameter
+- Informative Fehlermeldungen mit Kontext
+- Graceful Fallbacks bei API-Fehlern
+
+## 📚 API Dokumentation
+
+Alle verfügbaren Tools werden automatisch durch den MCP Server dokumentiert und können durch `ListToolsRequest` abgerufen werden.
+
+## 🤝 Beitragen
 
 1. Fork das Repository
-2. Erstelle einen Feature Branch
-3. Committe deine Änderungen
-4. Push zum Branch
-5. Öffne einen Pull Request
+2. Erstellen Sie einen Feature-Branch
+3. Committen Sie Ihre Änderungen
+4. Push zum Branch  
+5. Erstellen Sie einen Pull Request
 
-## 📄 License
+## 📄 Lizenz
 
 ISC License - siehe LICENSE Datei für Details.
+
+---
+
+**Bereit für E-Commerce! 🛍️**
+
+Starten Sie den Server mit `npm start` und beginnen Sie sofort mit der Intershop-Integration in Ihren MCP-fähigen Client.

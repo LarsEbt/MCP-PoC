@@ -1,34 +1,30 @@
 {
-  "name": "custom-mcp-server",
+  "name": "intershop-mcp-server",
   "version": "1.0.0",
-  "description": "Ein Custom MCP Server für eigene APIs und Tools",
+  "description": "Ein spezialisierter MCP Server für Intershop E-Commerce Integration",
   "main": "index.js",
   "type": "module",
   "bin": {
-    "custom-mcp-server": "index.js"
+    "intershop-mcp-server": "index.js"
   },
   "scripts": {
     "start": "node index.js",
     "dev": "node --inspect index.js",
-    "http": "node http-wrapper.js",
-    "test": "node test.js",
-    "test:api": "node test.js",
     "test:intershop": "node test-intershop.js"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
     "server",
-    "api",
-    "custom"
+    "intershop",
+    "e-commerce",
+    "icm"
   ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.16.0",
-    "cors": "^2.8.5",
     "dotenv": "^17.2.0",
-    "express": "^5.1.0",
     "zod": "^3.25.76"
   }
 }

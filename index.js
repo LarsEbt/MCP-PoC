@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Custom MCP Server
- * Ein MCP Server für eigene APIs und Tools
+ * Intershop MCP Server
+ * Ein spezialisierter MCP Server für Intershop E-Commerce Integration
  */
 
 import 'dotenv/config';
@@ -18,7 +18,7 @@ import IntershopIcmClient from './intershop-client.js';
 // Server-Instanz erstellen
 const server = new Server(
   {
-    name: 'custom-mcp-server',
+    name: 'intershop-mcp-server',
     version: '1.0.0',
   },
   {
@@ -28,20 +28,7 @@ const server = new Server(
   }
 );
 
-// Schema für die Custom API Parameter
-const ApiCallSchema = z.object({
-  endpoint: z.string().describe('API Endpoint URL'),
-  method: z.enum(['GET', 'POST', 'PUT', 'DELETE']).default('GET'),
-  headers: z.record(z.string()).optional().describe('HTTP Headers'),
-  body: z.string().optional().describe('Request Body (JSON string)'),
-});
-
-const DatabaseQuerySchema = z.object({
-  query: z.string().describe('SQL Query oder Database Query'),
-  params: z.array(z.any()).optional().describe('Query Parameters'),
-});
-
-// E-Commerce spezifische Schemas
+// Intershop-spezifische Schemas
 const ProductSearchSchema = z.object({
   query: z.string().optional().describe('Suchbegriff für Produkte'),
   category: z.string().optional().describe('Kategorie ID'),
@@ -57,12 +44,24 @@ const BasketActionSchema = z.object({
   basketId: z.string().optional().describe('Warenkorb ID (wird erstellt wenn leer)'),
   sku: z.string().optional().describe('Produkt SKU zum Hinzufügen'),
   quantity: z.number().optional().default(1).describe('Anzahl des Produkts'),
+  itemId: z.string().optional().describe('Item ID für Updates/Löschungen'),
+});
+
+const AdvancedSearchSchema = z.object({
+  query: z.string().optional().describe('Suchbegriff'),
+  category: z.string().optional().describe('Kategorie ID'),
+  minPrice: z.number().optional().describe('Mindestpreis'),
+  maxPrice: z.number().optional().describe('Höchstpreis'),
+  brand: z.string().optional().describe('Marke/Hersteller'),
+  sortBy: z.string().optional().default('relevance').describe('Sortierung'),
+  limit: z.number().optional().default(24).describe('Anzahl der Ergebnisse'),
+  offset: z.number().optional().default(0).describe('Offset für Paginierung'),
 });
 
 // Intershop Client initialisieren
 const intershopClient = new IntershopIcmClient();
 
-// Tools definieren
+// Intershop Tools definieren
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -94,6 +93,51 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'advanced_product_search',
+        description: 'Erweiterte Produktsuche mit Filtern (Preis, Marke, etc.)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'Suchbegriff',
+            },
+            category: {
+              type: 'string',
+              description: 'Kategorie ID',
+            },
+            minPrice: {
+              type: 'number',
+              description: 'Mindestpreis',
+            },
+            maxPrice: {
+              type: 'number',
+              description: 'Höchstpreis',
+            },
+            brand: {
+              type: 'string',
+              description: 'Marke/Hersteller',
+            },
+            sortBy: {
+              type: 'string',
+              enum: ['relevance', 'price-asc', 'price-desc', 'name', 'newest'],
+              default: 'relevance',
+              description: 'Sortierung',
+            },
+            limit: {
+              type: 'number',
+              default: 24,
+              description: 'Anzahl der Ergebnisse',
+            },
+            offset: {
+              type: 'number',
+              default: 0,
+              description: 'Offset für Paginierung',
+            },
+          },
+        },
+      },
+      {
         name: 'get_product_details',
         description: 'Detaillierte Produktinformationen abrufen',
         inputSchema: {
@@ -108,28 +152,74 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'get_product_reviews',
+        description: 'Produktbewertungen und Reviews abrufen',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sku: {
+              type: 'string',
+              description: 'Produkt SKU/Artikelnummer',
+            },
+          },
+          required: ['sku'],
+        },
+      },
+      {
+        name: 'get_similar_products',
+        description: 'Ähnliche/Empfohlene Produkte finden',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sku: {
+              type: 'string',
+              description: 'Produkt SKU als Basis für Empfehlungen',
+            },
+          },
+          required: ['sku'],
+        },
+      },
+      {
+        name: 'check_product_availability',
+        description: 'Produktverfügbarkeit und Lagerbestand prüfen',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            sku: {
+              type: 'string',
+              description: 'Produkt SKU/Artikelnummer',
+            },
+          },
+          required: ['sku'],
+        },
+      },
+      {
         name: 'manage_basket',
-        description: 'Warenkorb verwalten (erstellen, Produkte hinzufügen, anzeigen)',
+        description: 'Warenkorb verwalten (erstellen, Produkte hinzufügen, anzeigen, aktualisieren, löschen)',
         inputSchema: {
           type: 'object',
           properties: {
             action: {
               type: 'string',
-              enum: ['create', 'add_product', 'view', 'update', 'remove'],
-              description: 'Aktion: create (erstellen), add_product (Produkt hinzufügen), view (anzeigen)',
+              enum: ['create', 'add_product', 'view', 'update_item', 'remove_item'],
+              description: 'Warenkorb-Aktion',
             },
             basketId: {
               type: 'string',
-              description: 'Warenkorb ID (wird automatisch erstellt wenn leer)',
+              description: 'Warenkorb ID (wird automatisch erstellt wenn leer bei create)',
             },
             sku: {
               type: 'string',
-              description: 'Produkt SKU zum Hinzufügen',
+              description: 'Produkt SKU (für add_product)',
             },
             quantity: {
               type: 'number',
               default: 1,
-              description: 'Anzahl des Produkts (Standard: 1)',
+              description: 'Anzahl des Produkts (für add_product und update_item)',
+            },
+            itemId: {
+              type: 'string',
+              description: 'Item ID (für update_item und remove_item)',
             },
           },
           required: ['action'],
@@ -137,7 +227,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_categories',
-        description: 'Produktkategorien abrufen',
+        description: 'Produktkategorien abrufen (alle oder spezifische)',
         inputSchema: {
           type: 'object',
           properties: {
@@ -149,79 +239,48 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
-        name: 'call_custom_api',
-        description: 'Ruft eine eigene API auf',
+        name: 'get_category_products',
+        description: 'Alle Produkte einer bestimmten Kategorie abrufen',
         inputSchema: {
           type: 'object',
           properties: {
-            endpoint: {
+            categoryId: {
               type: 'string',
-              description: 'Die URL des API Endpoints',
+              description: 'Kategorie ID',
             },
-            method: {
-              type: 'string',
-              enum: ['GET', 'POST', 'PUT', 'DELETE'],
-              default: 'GET',
-              description: 'HTTP Method',
+            limit: {
+              type: 'number',
+              default: 24,
+              description: 'Anzahl der Ergebnisse',
             },
-            headers: {
-              type: 'object',
-              description: 'HTTP Headers (optional)',
-            },
-            body: {
-              type: 'string',
-              description: 'Request Body als JSON String (optional)',
+            offset: {
+              type: 'number',
+              default: 0,
+              description: 'Offset für Paginierung',
             },
           },
-          required: ['endpoint'],
+          required: ['categoryId'],
         },
       },
       {
-        name: 'query_database',
-        description: 'Führt eine Datenbank-Abfrage aus',
+        name: 'start_checkout',
+        description: 'Checkout-Prozess für einen Warenkorb starten',
         inputSchema: {
           type: 'object',
           properties: {
-            query: {
+            basketId: {
               type: 'string',
-              description: 'SQL Query oder Database Query',
-            },
-            params: {
-              type: 'array',
-              description: 'Query Parameters (optional)',
+              description: 'Warenkorb ID für den Checkout',
             },
           },
-          required: ['query'],
-        },
-      },
-      {
-        name: 'process_data',
-        description: 'Verarbeitet Daten mit eigener Logik',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            data: {
-              type: 'string',
-              description: 'Daten zum Verarbeiten (JSON String)',
-            },
-            operation: {
-              type: 'string',
-              enum: ['filter', 'transform', 'aggregate', 'validate'],
-              description: 'Art der Datenverarbeitung',
-            },
-            options: {
-              type: 'object',
-              description: 'Zusätzliche Optionen für die Verarbeitung',
-            },
-          },
-          required: ['data', 'operation'],
+          required: ['basketId'],
         },
       },
     ],
   };
 });
 
-// Tool-Handler implementieren
+// Intershop Tool-Handler implementieren
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
@@ -252,7 +311,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `Produktsuche erfolgreich!\n\n📊 Ergebnisse: ${products.length} Produkte gefunden\n\n🔝 Top 5 Produkte:\n${JSON.stringify(summary, null, 2)}`,
+              text: `🛍️ Produktsuche erfolgreich!\n\n📊 Ergebnisse: ${products.length} Produkte gefunden\n🔍 Suche: "${query || 'Alle Produkte'}"\n� Kategorie: ${category || 'Alle'}\n\n�🔝 Top 5 Produkte:\n${JSON.stringify(summary, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      case 'advanced_product_search': {
+        const params = AdvancedSearchSchema.parse(args);
+        
+        const result = await intershopClient.advancedProductSearch(params);
+        const products = result.products || result.elements || [];
+        
+        const summary = products.slice(0, 5).map(product => ({
+          sku: product.sku,
+          name: product.productName || product.name,
+          price: intershopClient.formatPrice(product.listPrice || product.salePrice),
+          manufacturer: product.manufacturer,
+          inStock: product.inStock,
+        }));
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `🔍 Erweiterte Produktsuche erfolgreich!\n\n📊 ${products.length} Produkte gefunden\n💰 Preisbereich: ${params.minPrice || 0} - ${params.maxPrice || '∞'}\n🏷️ Marke: ${params.brand || 'Alle'}\n📋 Sortierung: ${params.sortBy}\n\n🔝 Top 5 Ergebnisse:\n${JSON.stringify(summary, null, 2)}`,
             },
           ],
         };
@@ -287,14 +370,59 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `Produktdetails für SKU: ${sku}\n\n${JSON.stringify(details, null, 2)}`,
+              text: `📋 Produktdetails für SKU: ${sku}\n\n${JSON.stringify(details, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      case 'get_product_reviews': {
+        const { sku } = ProductDetailsSchema.parse(args);
+        
+        const reviews = await intershopClient.getProductReviews(sku);
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `⭐ Bewertungen für Produkt ${sku}:\n\n${JSON.stringify(reviews, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      case 'get_similar_products': {
+        const { sku } = ProductDetailsSchema.parse(args);
+        
+        const similar = await intershopClient.getSimilarProducts(sku);
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `🔗 Ähnliche Produkte für ${sku}:\n\n${JSON.stringify(similar, null, 2)}`,
+            },
+          ],
+        };
+      }
+
+      case 'check_product_availability': {
+        const { sku } = ProductDetailsSchema.parse(args);
+        
+        const availability = await intershopClient.checkAvailability(sku);
+        
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `📦 Verfügbarkeit für Produkt ${sku}:\n\n${JSON.stringify(availability, null, 2)}`,
             },
           ],
         };
       }
 
       case 'manage_basket': {
-        const { action, basketId, sku, quantity = 1 } = args;
+        const { action, basketId, sku, quantity = 1, itemId } = BasketActionSchema.parse(args);
         
         let result;
         
@@ -305,7 +433,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               content: [
                 {
                   type: 'text',
-                  text: `Warenkorb erstellt!\n\nBasket ID: ${result.basketId || result.id}\nStatus: ${result.status || 'Neu'}`,
+                  text: `🛒 Warenkorb erstellt!\n\n🆔 Basket ID: ${result.basketId || result.id}\n📊 Status: ${result.status || 'Neu'}`,
                 },
               ],
             };
@@ -319,7 +447,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               content: [
                 {
                   type: 'text',
-                  text: `Produkt zum Warenkorb hinzugefügt!\n\nProdukt: ${sku}\nMenge: ${quantity}\nBasket ID: ${basketId}`,
+                  text: `✅ Produkt zum Warenkorb hinzugefügt!\n\n🏷️ Produkt: ${sku}\n📊 Menge: ${quantity}\n🛒 Basket ID: ${basketId}`,
+                },
+              ],
+            };
+            
+          case 'update_item':
+            if (!basketId || !itemId || !quantity) {
+              throw new Error('basketId, itemId und quantity sind für update_item erforderlich');
+            }
+            result = await intershopClient.updateBasketItem(basketId, itemId, quantity);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `🔄 Warenkorb-Item aktualisiert!\n\n🆔 Item ID: ${itemId}\n📊 Neue Menge: ${quantity}\n🛒 Basket ID: ${basketId}`,
+                },
+              ],
+            };
+            
+          case 'remove_item':
+            if (!basketId || !itemId) {
+              throw new Error('basketId und itemId sind für remove_item erforderlich');
+            }
+            result = await intershopClient.removeFromBasket(basketId, itemId);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `🗑️ Item aus Warenkorb entfernt!\n\n🆔 Item ID: ${itemId}\n🛒 Basket ID: ${basketId}`,
                 },
               ],
             };
@@ -335,10 +491,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               itemCount: result.lineItems?.length || 0,
               total: intershopClient.formatPrice(result.total),
               items: result.lineItems?.map(item => ({
+                id: item.itemId,
                 sku: item.sku,
                 name: item.productName,
                 quantity: item.quantity,
                 price: intershopClient.formatPrice(item.singleBasePrice),
+                total: intershopClient.formatPrice(item.totalPrice),
               })) || [],
             };
             
@@ -346,7 +504,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               content: [
                 {
                   type: 'text',
-                  text: `Warenkorb Details:\n\n${JSON.stringify(basketSummary, null, 2)}`,
+                  text: `🛒 Warenkorb Details:\n\n${JSON.stringify(basketSummary, null, 2)}`,
                 },
               ],
             };
@@ -370,175 +528,66 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `Kategorien:\n\n${JSON.stringify(result, null, 2)}`,
+              text: `📂 Kategorien ${categoryId ? `(${categoryId})` : '(Alle)'}:\n\n${JSON.stringify(result, null, 2)}`,
             },
           ],
         };
       }
 
-      case 'call_custom_api': {
-        const { endpoint, method = 'GET', headers = {}, body } = ApiCallSchema.parse(args);
+      case 'get_category_products': {
+        const { categoryId, limit = 24, offset = 0 } = args;
         
-        // Automatische API-Key-Behandlung für bekannte Services
-        let finalHeaders = { 'Content-Type': 'application/json', ...headers };
-        let finalEndpoint = endpoint;
-        
-        // OpenWeather API - automatisch API Key hinzufügen
-        if (endpoint.includes('openweathermap.org') && process.env.WEATHER_API_KEY) {
-          const url = new URL(endpoint);
-          url.searchParams.set('appid', process.env.WEATHER_API_KEY);
-          finalEndpoint = url.toString();
+        if (!categoryId) {
+          throw new Error('categoryId ist erforderlich');
         }
         
-        // RapidAPI - automatisch Headers hinzufügen
-        if (endpoint.includes('rapidapi.com') && process.env.RAPIDAPI_KEY) {
-          finalHeaders['X-RapidAPI-Key'] = process.env.RAPIDAPI_KEY;
-        }
+        const result = await intershopClient.getCategoryProducts(categoryId, { limit, offset });
+        const products = result.products || result.elements || [];
         
-        // News API - automatisch API Key hinzufügen
-        if (endpoint.includes('newsapi.org') && process.env.NEWS_API_KEY) {
-          const url = new URL(endpoint);
-          url.searchParams.set('apiKey', process.env.NEWS_API_KEY);
-          finalEndpoint = url.toString();
-        }
-        
-        // Custom API Key als Authorization Header
-        if (process.env.CUSTOM_API_KEY && !finalHeaders.Authorization) {
-          finalHeaders.Authorization = `Bearer ${process.env.CUSTOM_API_KEY}`;
-        }
-
-        const fetchOptions = {
-          method,
-          headers: finalHeaders,
-        };
-
-        if (body && method !== 'GET') {
-          fetchOptions.body = body;
-        }
-
-        const response = await fetch(finalEndpoint, fetchOptions);
-        const data = await response.text();
-        
-        let jsonData;
-        try {
-          jsonData = JSON.parse(data);
-        } catch {
-          jsonData = data;
-        }
+        const summary = products.slice(0, 5).map(product => ({
+          sku: product.sku,
+          name: product.productName || product.name,
+          price: intershopClient.formatPrice(product.listPrice || product.salePrice),
+        }));
 
         return {
           content: [
             {
               type: 'text',
-              text: `API Aufruf erfolgreich!\n\nStatus: ${response.status}\nEndpoint: ${finalEndpoint}\nResponse:\n${JSON.stringify(jsonData, null, 2)}`,
+              text: `📂 Produkte in Kategorie ${categoryId}:\n\n📊 ${products.length} Produkte gefunden\n\n🔝 Top 5:\n${JSON.stringify(summary, null, 2)}`,
             },
           ],
         };
       }
 
-      case 'query_database': {
-        const { query, params = [] } = DatabaseQuerySchema.parse(args);
+      case 'start_checkout': {
+        const { basketId } = args;
         
-        // Hier würdest du deine echte Datenbankverbindung implementieren
-        // Beispiel für verschiedene Database-Systeme:
+        if (!basketId) {
+          throw new Error('basketId ist erforderlich');
+        }
         
-        // Simulierte Antwort - ersetze dies mit deiner echten DB-Logik
-        const simulatedResult = {
-          query,
-          params,
-          result: 'Hier würde das echte Datenbank-Ergebnis stehen',
-          timestamp: new Date().toISOString(),
-        };
-
+        const result = await intershopClient.startCheckout(basketId);
+        
         return {
           content: [
             {
               type: 'text',
-              text: `Datenbank-Abfrage ausgeführt:\n\n${JSON.stringify(simulatedResult, null, 2)}`,
-            },
-          ],
-        };
-      }
-
-      case 'process_data': {
-        const { data, operation, options = {} } = args;
-        
-        let parsedData;
-        try {
-          parsedData = JSON.parse(data);
-        } catch (error) {
-          throw new Error(`Ungültige JSON-Daten: ${error.message}`);
-        }
-
-        let result;
-        
-        switch (operation) {
-          case 'filter':
-            // Beispiel für Datenfilterung
-            result = Array.isArray(parsedData) 
-              ? parsedData.filter(item => {
-                  // Implementiere deine Filter-Logik hier
-                  return true; // Placeholder
-                })
-              : parsedData;
-            break;
-            
-          case 'transform':
-            // Beispiel für Datentransformation
-            result = Array.isArray(parsedData)
-              ? parsedData.map(item => ({
-                  ...item,
-                  processed: true,
-                  timestamp: new Date().toISOString(),
-                }))
-              : { ...parsedData, processed: true, timestamp: new Date().toISOString() };
-            break;
-            
-          case 'aggregate':
-            // Beispiel für Datenaggregation
-            if (Array.isArray(parsedData)) {
-              result = {
-                count: parsedData.length,
-                summary: 'Aggregierte Daten',
-                items: parsedData,
-              };
-            } else {
-              result = { single_item: parsedData };
-            }
-            break;
-            
-          case 'validate':
-            // Beispiel für Datenvalidierung
-            result = {
-              valid: true,
-              data: parsedData,
-              validation_timestamp: new Date().toISOString(),
-            };
-            break;
-            
-          default:
-            throw new Error(`Unbekannte Operation: ${operation}`);
-        }
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Daten verarbeitet (${operation}):\n\n${JSON.stringify(result, null, 2)}`,
+              text: `💳 Checkout gestartet für Warenkorb ${basketId}:\n\n${JSON.stringify(result, null, 2)}`,
             },
           ],
         };
       }
 
       default:
-        throw new Error(`Unbekanntes Tool: ${name}`);
+        throw new Error(`Unbekanntes Intershop Tool: ${name}`);
     }
   } catch (error) {
     return {
       content: [
         {
           type: 'text',
-          text: `Fehler beim Ausführen des Tools "${name}": ${error.message}`,
+          text: `❌ Fehler beim Ausführen des Tools "${name}": ${error.message}`,
         },
       ],
       isError: true,
@@ -546,14 +595,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Server starten
+// Intershop MCP Server starten
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Custom MCP Server gestartet und bereit!');
+  console.error('🛍️ Intershop MCP Server gestartet und bereit für E-Commerce-Anfragen!');
 }
 
 main().catch((error) => {
-  console.error('Server-Fehler:', error);
+  console.error('❌ Server-Fehler:', error);
   process.exit(1);
 });
