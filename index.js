@@ -13,7 +13,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import IntershopIcmClient from './intershop-client.js';
+import { IntershopIcmClient } from './intershop-client.js';
 
 // Server-Instanz erstellen
 const server = new Server(

@@ -268,9 +268,3 @@ export class IntershopIcmClient {
     return await this.post(`/baskets/${basketId}/checkout`);
   }
 }
-
-// Standard Export
-export default IntershopIcmClient;
-
-// Named Export für Kompatibilität
-export { IntershopIcmClient };
