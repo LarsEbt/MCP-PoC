@@ -93,7 +93,16 @@ export function appendQueryParams(url, params = {}) {
   
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {
-      urlObj.searchParams.append(key, value.toString());
+      // Array-Werte als separate Parameter hinzufügen
+      if (Array.isArray(value)) {
+        value.forEach(item => {
+          if (item !== undefined && item !== null) {
+            urlObj.searchParams.append(key, item.toString());
+          }
+        });
+      } else {
+        urlObj.searchParams.append(key, value.toString());
+      }
     }
   }
   

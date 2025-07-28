@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "intershop-mcp-server": {
+      "command": "node",
+      "args": ["index.js"],
+      "cwd": "c:/Users/Lebert/Desktop/repos/MCP-PoC",
+      "env": {}
+    }
+  }
+}
